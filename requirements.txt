@@ -1,7 +1,8 @@
+google-adk
+distro
 langchain
 langchain-community
-langchain-core
-langchain-google-vertexai
+litellm
 google-cloud-aiplatform
 markdown
 scipy
@@ -9,7 +10,7 @@ scikit-learn
 pandas
 numpy
 lightgbm
-langchain-neo4j
+langchain-google-vertexai
 neo4j
 fastapi
 uvicorn
@@ -17,3 +18,4 @@ python-dotenv
 pydantic==2.11.7
 unstructured
 joblib
+yfinance

@@ -1,73 +1,76 @@
-"""
-Contains the logic for making clinical outcome predictions by loading
-and using pre-trained machine learning models and preprocessing objects.
-"""
-import joblib
+# app/models/predict.py
+
 import pandas as pd
-from pathlib import Path # <-- FIX: Import pathlib for robust path handling
+import numpy as np
+import joblib
+import os
+from pathlib import Path
 
-try:
-    APP_DIR = Path(__file__).resolve().parent.parent
-    MODEL_DIR = APP_DIR / "saved_models"
+# --- Configuration ---
+MODEL_DIR = Path(__file__).resolve().parent / "saved_models"
+PRICES_DIR = Path(__file__).resolve().parent.parent.parent / "data/structured/prices"
 
-    copd_classifier = joblib.load(MODEL_DIR / 'copd_classifier.joblib')
-    alt_regressor = joblib.load(MODEL_DIR / 'alt_regressor.joblib')
-    copd_label_encoder = joblib.load(MODEL_DIR / 'copd_label_encoder.joblib')
-    top_copd_features = joblib.load(MODEL_DIR / 'top_copd_features.joblib')
-    top_alt_features = joblib.load(MODEL_DIR / 'top_alt_features.joblib')
-    encoded_columns = joblib.load(MODEL_DIR / 'encoded_columns.joblib')
-    MODELS_LOADED = True
-    print("--> [Predictor] All models and preprocessing objects loaded successfully.")
-
-except FileNotFoundError as e:
-    MODELS_LOADED = False
-    print(f"--> [Predictor] WARNING: Model files not found. Error: {e}")
-    print(f"--> [Predictor] Looked in directory: {MODEL_DIR.resolve()}")
-    print("--> Please ensure the 'saved_models' directory exists at the project root.")
-
-
-def predict_patient_outcomes(patient_features: dict) -> dict:
+def predict_next_day_price(ticker: str) -> dict:
     """
-    Predicts clinical outcomes using loaded machine learning models.
-
-    This function preprocesses the input features to match the exact format used
-    during training, then runs inference with the appropriate models.
+    Predicts the next day's closing price for a given stock ticker.
 
     Args:
-        patient_features: A dictionary of raw patient data provided by the agent.
+        ticker: The stock ticker (e.g., 'AAPL').
 
     Returns:
-        A dictionary containing the predicted outcomes.
+        A dictionary with the predicted price or an error message.
     """
-    if not MODELS_LOADED:
+    try:
+        # Load the trained model and its required features
+        model = joblib.load(MODEL_DIR / f"{ticker}_price_regressor.joblib")
+        features_list = joblib.load(MODEL_DIR / f"{ticker}_features.joblib")
+
+        # Load the latest historical data for the ticker
+        df = pd.read_csv(PRICES_DIR / f"{ticker}_prices.csv")
+        df['Date'] = pd.to_datetime(df['Date'])
+        df.set_index('Date', inplace=True)
+        df.sort_index(inplace=True)
+
+        # Take a slice of the last ~30 days to ensure rolling windows can be calculated
+        latest_data = df.tail(30).copy()
+
+        # 1. Lag Features
+        for i in range(1, 11): # WINDOW_SIZE is 10
+            latest_data[f'Close_lag_{i}'] = latest_data['Close'].shift(i)
+
+        # 2. Rolling Window Features
+        latest_data['MA_5'] = latest_data['Close'].rolling(window=5).mean()
+        latest_data['MA_20'] = latest_data['Close'].rolling(window=20).mean()
+
+        # 3. Volume-based Features
+        latest_data['Volume_lag_1'] = latest_data['Volume'].shift(1)
+        latest_data['Volume_MA_5'] = latest_data['Volume'].rolling(window=5).mean()
+
+        # Get the very last row, which now contains all the features needed for prediction
+        prediction_features = latest_data.tail(1)
+
+        # Ensure the feature DataFrame has the correct columns in the correct order
+        prediction_features = prediction_features[features_list]
+
+        # Make the prediction
+        predicted_price = model.predict(prediction_features)[0]
+
         return {
-            "error": "Prediction models are not loaded. Please check the container logs for errors."
+            "ticker": ticker,
+            "predicted_next_day_close": round(float(predicted_price), 2)
         }
 
-    print(f"--> [Predictor] Received raw features for prediction: {patient_features}")
+    except FileNotFoundError:
+        return {"error": f"Model or data for ticker '{ticker}' not found. Please ensure it has been trained."}
+    except Exception as e:
+        return {"error": f"An error occurred during prediction for {ticker}: {e}"}
 
-    # 1. Convert the input dictionary to a pandas DataFrame
-    input_df = pd.DataFrame([patient_features])
+if __name__ == '__main__':
+    sample_ticker = 'AAPL'
+    prediction = predict_next_day_price(sample_ticker)
 
-    # 2. One-Hot Encode the input data using the same columns as the training script
-    input_encoded = pd.get_dummies(input_df)
-
-    # 3. Align columns with the training data's full feature set
-    input_aligned = input_encoded.reindex(columns=encoded_columns, fill_value=0)
-
-    # 4. Predict COPD
-    copd_features_df = input_aligned[top_copd_features]
-    copd_prediction_encoded = copd_classifier.predict(copd_features_df)
-    copd_prediction = copd_label_encoder.inverse_transform(copd_prediction_encoded)[0]
-
-    # 5. Predict ALT
-    alt_features_df = input_aligned[top_alt_features]
-    alt_prediction = alt_regressor.predict(alt_features_df)[0]
-
-    result = {
-        "predicted_chronic_obstructive_pulmonary_disease": str(copd_prediction),
-        "predicted_alanine_aminotransferase": round(float(alt_prediction), 4)
-    }
-
-    print(f"--> [Predictor] Returning final predictions: {result}")
-    return result
+    if "error" in prediction:
+        print(f"Error: {prediction['error']}")
+    else:
+        print(f"Prediction for {prediction['ticker']}:")
+        print(f"  Predicted Close Price for Tomorrow: ${prediction['predicted_next_day_close']}")

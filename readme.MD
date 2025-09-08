@@ -1,124 +1,120 @@
-# Clinical AI Assistant
+# Financial AI Assistant
 
-A multi-agent conversational healthcare analytics platform that combines patient data analysis, clinical document processing, and machine learning predictions through an intuitive chat interface.
+A multi-agent conversational financial analytics platform that combines company fundamentals analysis, SEC filing intelligence, and machine learning-based stock price prediction through an intuitive chat interface.
 
-This Data Doctor – AI Health Assistant follows the code and reasoning of three of my articles I wrote on Medium:
+This project applies architectural principles from knowledge graphs and AI agents, adapting them from healthcare to finance and market analysis. The core idea demonstrates how a combination of graph databases, RAG (Retrieval-Augmented Generation), and predictive models can create powerful, domain-specific AI assistants.
 
-[Building Knowledge Graphs from Scratch Using Neo4j and Vertex AI - March 2024](https://medium.com/@rubenszimbres/building-knowledge-graphs-from-scratch-using-neo4j-and-vertex-ai-8311eb69a472)
+## Background Articles
 
-[Use LLMs to Turn CSVs into Knowledge Graphs: A Case in Healthcare - June 2024](https://medium.com/@rubenszimbres/use-llms-to-turn-csvs-into-knowledge-graphs-a-case-in-healthcare-158d3ee0afde)
+This project builds on concepts from several technical articles of mine:
 
-[Understanding Alzheimer’s: Building Knowledge Graphs from Unstructured Data with Gemini - February 2025](https://medium.com/@rubenszimbres/understanding-alzheimers-building-knowledge-graphs-from-unstructured-data-with-gemini-ba11167da31d)
+- [Building Knowledge Graphs from Scratch Using Neo4j and Vertex AI](https://medium.com/@rubenszimbres/building-knowledge-graphs-from-scratch-using-neo4j-and-vertex-ai-8311eb69a472) - March 2024
+- [Use LLMs to Turn CSVs into Knowledge Graphs: A Case in Healthcare](https://medium.com/@rubenszimbres/use-llms-to-turn-csvs-into-knowledge-graphs-a-case-in-healthcare-158d3ee0afde) - June 2024
+- [Understanding Alzheimer's: Building Knowledge Graphs from Unstructured Data with Gemini](https://medium.com/@rubenszimbres/understanding-alzheimers-building-knowledge-graphs-from-unstructured-data-with-gemini-ba11167da31d) - February 2025
 
 ## What This System Does
 
-The Clinical AI Assistant helps healthcare professionals and researchers analyze patient data through natural language queries. Instead of writing complex database queries or manually searching through clinical documents, users can simply ask questions like "How many diabetic patients are over 65?" or "What are the common symptoms mentioned in respiratory cases?". This Natural Language queries will activate tools of the backend agent, that will provide the response to the frontend agent.
+The Financial AI Assistant empowers investors, analysts, and researchers to analyze market data through natural language queries. Instead of writing complex database queries or manually sifting through lengthy SEC filings, users can simply ask questions like:
 
-The system provides three main capabilities via backend agent tools:
-- **Patient Data Analysis**: Query demographics, medical history, and outcomes from structured datasets (csv).
-- **Clinical Document Intelligence**: Search and summarize information from medical reports and notes, via vector search (markdowns).
-- **Predictive Analytics**: Generate risk predictions for conditions like COPD and liver enzyme levels, via pre trained models.
+- "What was the revenue for Apple in 2023?"
+- "Summarize the key risks mentioned in NVIDIA's latest 10-K filing?"
 
-## Problems Identified During Development
-- I had the impression that the CSV, anonymized patient records either is synthetic or does not contain variables relevant to the prediction of chronic_obstructive_pulmonary_disease, as the accuracy obtained during training was very low. I noticed markdown data is also synthetic.
-- The IDs of the CSV and the Markdown files do not match, what makes it difficult to generate more valuable insights.
-- Two columns of the CSV (exercise_frequency and education level) had more than 50% missing values.
-- In the CSV, the alanine_aminotransferase column has extreme values, that I understand not as outliers, but as errors.
-- I had trade-offs: For best results I should use Gemini-2.5-Pro, but that would cost 60 USD in cloud credits. Instead, I used Gemini-2.5-Flash, with the same result, and a total cost of 15 USD in cloud credits. Also, I scaled the Cloud Run instance (equivalent to AWS ECS) to zero.
+This natural language interface activates tools in the backend agent system to provide comprehensive answers.
+
+### Core Capabilities
+
+The system provides three main capabilities via its agent tools:
+
+1. **Corporate Financial Analysis**: Query company fundamentals, financials, and key metrics from structured data
+2. **SEC Filing Intelligence**: Perform semantic search and summarization on the full text of annual 10-K reports to extract qualitative insights
+3. **Predictive Analytics**: Generate next-day price predictions for individual stocks using pre-trained autoregressive models
+
+## Technical Architecture
+
+### System Overview
+
+The Financial AI Assistant uses a sophisticated multi-layered architecture:
+
+1. **Frontend Layer**: Clean web interface with HTML, CSS, and JavaScript chat interface
+2. **API Layer**: FastAPI server handling request validation and response formatting
+3. **Agent Orchestration**: Root/Sub-Agent architecture using Google's ADK (Agent Development Kit)
+4. **Data Storage**: Multi-modal Neo4j database serving as both graph and vector database
+5. **External AI Services**: Google Vertex AI for language understanding and embeddings
+
+### Agent Architecture
+
+The system employs a Root/Sub-Agent pattern:
+
+- **Root Agent**: Acts as the "lead analyst," analyzing questions and delegating to appropriate specialists
+- **Sub-Agents**: Function as "specialist analysts" with specific tools:
+  - **Graph QA Agent**: Generates Cypher queries for statistical questions about company financials
+  - **Document RAG Agent**: Performs semantic search through SEC filings
+  - **Stock Predictor Agent**: Runs ML models for next-day price predictions
+
+### Data Flow
+
+1. **Query Analysis**: Root Agent analyzes user intent
+2. **Tool Selection**: Appropriate sub-agent selected based on query type
+3. **Data Retrieval**: Sub-agent executes its tool (Cypher query, embedding search, or ML prediction)
+4. **Response Synthesis**: LLM processes results into natural language
+5. **Delivery**: Final answer sent through API to web interface
+
+## Technical Challenges & Solutions
+
+### Data Ingestion
+- Historical data pulled using `yfinance` library
+- SEC 10-K reports fetched from EDGAR database in complex iXBRL format
+
+### Handling "Noise"
+- SEC filings contain extensive boilerplate legal jargon
+- RAG pipeline uses `UnstructuredHTMLLoader` to extract core textual content
+
+### Prediction Modeling
+- Stock prediction demonstrates ML integration (not financial advice)
+- Simplified autoregressive model trained on historical price/volume
+- Does not account for market sentiment, news, or macroeconomic factors
+
+### Cost Optimization
+- Uses efficient `gemini-1.5-flash-001` model to balance performance and cost
+- Cloud deployment scales to zero to minimize idle costs
 
 ## Project Structure
 
 ```
-clinical-assistant/
+financial-assistant/
 ├── app/
 │   ├── agents/
-│   │   ├── backend_agent.py
-│   │   └── frontend_agent.py
+│   │   └── agents.py
 │   ├── graph_db/
 │   │   ├── connection.py
-│   │   └── populate_graph.py
+│   │   └── 2_populate_graph.py
 │   ├── models/
 │   │   ├── predict.py
-│   │   └── training.ipynb
+│   │   └── train_predictor.py
 │   ├── saved_models/
 │   ├── templates/
 │   │   └── index.html
 │   └── main.py
 ├── data/
-├── documents_data/
-├── img/
+│   ├── structured/
+│   │   ├── financials/
+│   │   └── prices/
+│   └── unstructured/
+│       └── 10k/
+├── fetch_data.py
+├── populate_graph.py
+├── companies.csv
 ├── .env
 ├── .env-example
-├── .gitignore
 ├── Dockerfile
 ├── README.md
 └── requirements.txt
 ```
 
-## System Architecture
-
-### How Information Flows Through the System
-
-The Clinical AI Assistant uses a sophisticated multi-layered architecture to process and respond to healthcare queries:
-
-#### Frontend Layer - User Interaction
-The system starts with a clean web interface built with HTML, CSS, and JavaScript. Users type natural language questions into a chat interface that is familiar and intuitive. The frontend handles the visual presentation and sends questions to the backend agent via the front-end agent.
-
-#### API Layer - Request Processing
-A FastAPI server acts as the central hub, receiving user questions and routing them through the agent system. This layer handles authentication, request validation, and response formatting. It serves both the web interface and provides RESTful endpoints for external integrations.
-
-#### Agent Orchestration - Intelligence Layer
-The system uses a dual-agent architecture that mimics how healthcare professionals approach complex questions:
-
-**Frontend Agent** acts as the "attending physician" - it receives the user's question, analyzes what type of information is needed, and determines which tools or data sources should be consulted. This agent handles query validation, tool selection, and response synthesis.
-
-**Backend Agent** functions like a "specialist consultant" - it has access to three specialized tools and executes the actual data retrieval and analysis:
-
-- **Graph QA Tool**: Generates database queries to answer statistical questions about patients
-- **Document RAG Tool**: Searches through clinical documents using semantic similarity
-- **Prediction Tool**: Runs machine learning models to predict patient outcomes
-
-#### Data Storage - Multi-Modal Repository
-The system stores information in a Neo4j database, which serves dual purposes:
-
-**Graph Database Function**: Patient records, diagnoses, medications, and relationships are stored as an interconnected web of nodes and edges. This allows complex queries like "Find all patients over 50 with heart attack who are taking more than 3 medications."
-
-**Vector Database Function**: Clinical documents are broken into searchable chunks and converted into mathematical embeddings that capture semantic meaning. This enables questions like "What symptoms are commonly reported with respiratory infections?"
-
-#### External AI Services - Language Understanding
-Google Vertex AI provides two critical capabilities:
-
-**Large Language Model**: Powers the conversational interface, generates database queries, extracts entities from documents, and synthesizes final responses in natural language.
-
-**Embedding Model**: Converts text into numerical vectors that enable semantic search across clinical documents, allowing the system to find relevant information even when exact keywords don't match.
-
-### Data Processing Workflow
-
-When the system starts up, it follows a specific data ingestion pipeline:
-
-**Step 1 - Structured Data Loading**: Patient information from CSV files is loaded into Neo4j as Patient nodes with all their demographic and clinical properties. Diagnosis codes become separate nodes linked to patients.
-
-**Step 2 - Document Processing**: Clinical documents in markdown format are processed by the language model to extract key entities like patient identifiers, symptoms, diagnoses, medications, and treatment plans. These entities are then linked to existing patient records in the graph.
-
-**Step 3 - Vector Preparation**: The same clinical documents are split into searchable chunks, converted into embeddings, and stored alongside the graph data to enable semantic search capabilities.
-
-**Step 4 - Model Integration**: Pre-trained machine learning models for predicting COPD risk and liver enzyme levels are loaded and made available through the prediction tool.
-
-### Response Generation Process
-
-When a user asks a question, the system follows this workflow:
-
-1. **Query Analysis**: The frontend agent analyzes the question to understand what type of information is being requested
-2. **Tool Selection**: Based on the query type, the agent selects the appropriate tool (graph queries for statistics, document search for qualitative information, or ML models for predictions)
-3. **Data Retrieval**: The backend agent executes the selected tool, whether that's generating a database query, searching document embeddings, or running a prediction model
-4. **Response Synthesis**: The results are processed and formatted into a natural language response that directly answers the user's question
-5. **Delivery**: The final answer is sent back through the API to the web interface
-
-This architecture allows the system to handle diverse healthcare queries while maintaining fast response times and accurate results. The separation between structured and unstructured data processing ensures that each type of question is handled by the most appropriate method.
-
 ## Quick Start
 
 ### Prerequisites
+
 - Google Cloud Platform account with Vertex AI enabled
 - Neo4j database instance (Neo4j AuraDB Free Tier recommended)
 - Python 3.11 or higher
@@ -126,90 +122,92 @@ This architecture allows the system to handle diverse healthcare queries while m
 
 ### Environment Setup
 
-1. **Clone the repository and create a virtual environment**:
+1. Clone the repository and create a virtual environment:
+
 ```bash
-git clone https://RubensZimbres/Loka
-cd clinical-assistant
+git clone https://github.com/your-username/financial-assistant.git
+cd financial-assistant
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. **Configure your environment variables** by creating a `.env` file:
-```
-GOOGLE_PROJECT_ID=your-gcp-project-id
-GOOGLE_LOCATION=us-central1
-NEO4J_URI=neo4j+s://your-instance.databases.neo4j.io
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=your-password
+2. Configure environment variables by creating a `.env` file from `.env-example`:
+
+```env
+GOOGLE_PROJECT_ID="your-gcp-project-id"
+GOOGLE_LOCATION="us-central1"
+NEO4J_URI="neo4j+s://your-instance.databases.neo4j.io"
+NEO4J_USERNAME="neo4j"
+NEO4J_PASSWORD="your-password"
+SEC_USER_AGENT="Your Name your.email@provider.com"
 ```
 
-3. **Populate the database with your data**:
+3. Run the complete data pipeline:
+
 ```bash
-python3 -m app.graph_db.populate_graph
+# Step 1: Create the list of target companies
+python3 create_companies.py
+
+# Step 2: Download all raw data from APIs (this will take a while)
+python3 fetch_data.py
+
+# Step 3: Populate the Neo4j database (Graph + Embeddings)
+python3 app/graph_db/2_populate_graph.py
+
+# Step 4: Train the predictive models (one for each stock)
+python3 app/models/train_predictor.py
 ```
 
-4. **Start the development server**:
+4. Start the development server:
+
 ```bash
-python3 uvicorn app.main:app --reload --port 8080
+uvicorn app.main:app --reload --port 8080
 ```
 
-5. **Open your browser** to `http://127.0.0.1:8080` and start asking questions
+5. Open your browser to `http://127.0.0.1:8080` and start asking questions.
 
 ## Example Queries
 
-### Patient Statistics
-- "How many patients are smokers?"
-- "What's the average age of diabetic patients?"
-- "Show me patients with high BMI who were readmitted"
+### Company Fundamentals (Graph QA)
+- "How many companies are in the technology sector?"
+- "What was the net income for MSFT in 2023?"
+- "List the major events for TSLA in their 2024 filing."
 
-### Clinical Document Analysis
-- "What symptoms are mentioned for respiratory conditions?"
-- "Summarize treatment plans for heart disease patients"
-- "What medications appear most frequently in discharge summaries?"
+### SEC Filing Insights (Document RAG)
+- "What did Google say about their AI strategy in the last 10-K?"
+- "Summarize Amazon's management outlook from their 2024 filing."
+- "What are the common concerns about supply chain disruptions?"
 
-### Predictive Analytics
-- "Predict COPD risk for a 60-year-old male smoker"
-- "What would be the expected liver enzyme level for this patient profile?"
+### Predictive Analytics (Prediction Tool)
+- "Predict the next closing price for AAPL."
+- "What is the stock price prediction for NVDA tomorrow?"
 
-## Screenshots of the Neo4j Graph Database, Agent Reasoning and Chat Interface
+## Deployment
 
-<img src="img/neo4j-Screenshot-text.png" alt="A screenshot showing text in Neo4j" width="800">
+### Google Cloud Run
 
-<img src="img/neo4j-Screenshot.png" alt="A general screenshot of Neo4j" width="800">
+The system is containerized for easy deployment to Google Cloud Run.
 
-<img src="img/neo4j-Screenshot-close.png" alt="A close-up screenshot of Neo4j" width="800">
-
-<img src="img/neo4j-Screenshotcloser_names.png" alt="A screenshot of Neo4j with closer names" width="800">
-
-<img src="img/agent-thinking.png" alt="A screenshot of the backend thinking" width="800">
-
-<img src="img/chat-interface.png" alt="A screenshot of chat interface" width="800">
-
-## Deployment to Google Cloud
-
-The system is designed for easy deployment to Google Cloud Run, as I have credits in Google Cloud, but it can also be deployed on ECS or EKS in AWS:
-
-⚠️ The instance is scaling to zero, in order to save costs. The cold start may take 13 seconds before first interaction
+⚠️ **Note**: The instance is configured to scale to zero to save costs. The cold start may take ~15 seconds before the first interaction.
 
 ```bash
 gcloud auth login
-
 gcloud config set project YOUR-PROJECT
 
-gcloud artifacts repositories create clinical-assistant-repo \
+gcloud artifacts repositories create financial-assistant-repo \
     --repository-format=docker \
     --location=us-central1 \
-    --description="Docker repository for clinical assistant service"
+    --description="Docker repository for financial assistant service"
 
-gcloud builds submit --tag us-central1-docker.pkg.dev/YOUR-PROJECT/clinical-assistant-repo/assistant-service:latest
+gcloud builds submit --tag us-central1-docker.pkg.dev/YOUR-PROJECT/financial-assistant-repo/assistant-service:latest
 
-gcloud run deploy clinical-assistant-service \
-    --image=us-central1-docker.pkg.dev/YOUR-PROJECT/clinical-assistant-repo/assistant-service:latest \
+gcloud run deploy financial-assistant-service \
+    --image=us-central1-docker.pkg.dev/YOUR-PROJECT/financial-assistant-repo/assistant-service:latest \
     --platform=managed \
     --region=us-central1 \
     --allow-unauthenticated \
-    --set-env-vars=GOOGLE_LOCATION=us-central1,NEO4J_URI="neo4j+s://XXXXXXXXXXXX",NEO4J_USERNAME=neo4j,NEO4J_PASSWORD="XXXXXXXXXXXXXXX" \
+    --set-env-vars-from-file=.env \
     --min-instances 0 \
     --max-instances 3 \
     --cpu 4 \
@@ -217,50 +215,43 @@ gcloud run deploy clinical-assistant-service \
     --concurrency 10
 ```
 
-After deployment, update the API URL in `templates/index.html` to point to your Cloud Run service.
+After deployment, update the API URL in `templates/index.html` to point to your new Cloud Run service URL.
 
-The service is running at:
-
-```
-https://clinical-assistant-service-923768638759.us-central1.run.app
-```
-
-## Deployment to AWS
+### AWS ECS
 
 ```bash
+# 1. Create ECR repository
 aws ecr create-repository \
-    --repository-name clinical-assistant-repo \
+    --repository-name financial-assistant-repo \
     --region us-east-1
 
+# 2. Login, Tag, and Push Docker image
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
+docker tag assistant-service:latest ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/financial-assistant-repo:latest
+docker push ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/financial-assistant-repo:latest
 
-docker tag clinical-assistant-service:latest ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/clinical-assistant-repo:latest
-
-docker push ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/clinical-assistant-repo:latest
-
-aws ecs create-cluster --cluster-name clinical-assistant-cluster
-
+# 3. Create ECS Cluster and Service
+aws ecs create-cluster --cluster-name financial-assistant-cluster
 aws ecs register-task-definition --cli-input-json file://task-definition.json
-
 aws ecs create-service \
-    --cluster clinical-assistant-cluster \
-    --service-name clinical-assistant-service \
-    --task-definition clinical-assistant-task \
+    --cluster financial-assistant-cluster \
+    --service-name financial-assistant-service \
+    --task-definition financial-assistant-task \
     --desired-count 1 \
     --launch-type "FARGATE" \
     --network-configuration "awsvpcConfiguration={subnets=SUBNET_ID,securityGroups=SECURITY_GROUP_ID,assignPublicIp=ENABLED}"
 ```
 
-`task-definition.json`
+Create a `task-definition.json` file:
 
-```
+```json
 {
-    "family": "clinical-assistant-task",
+    "family": "financial-assistant-task",
     "networkMode": "awsvpc",
     "containerDefinitions": [
         {
-            "name": "clinical-assistant-container",
-            "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/clinical-assistant-repo:latest",
+            "name": "financial-assistant-container",
+            "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/financial-assistant-repo:latest",
             "portMappings": [
                 {
                     "containerPort": 8080,
@@ -271,15 +262,14 @@ aws ecs create-service \
             "environment": [
                 { "name": "GOOGLE_PROJECT_ID", "value": "YOUR_PROJECT" },
                 { "name": "GOOGLE_LOCATION", "value": "us-central1" },
-                { "name": "NEO4J_URI", "value": "neo4j+s://XXXXXXXXXXXX" },
+                { "name": "NEO4J_URI", "value": "neo4j+s://XXXXXXXX" },
                 { "name": "NEO4J_USERNAME", "value": "neo4j" },
-                { "name": "NEO4J_PASSWORD", "value": "XXXXXXXXXXXXXXX" }
+                { "name": "NEO4J_PASSWORD", "value": "XXXXXXXX" },
+                { "name": "SEC_USER_AGENT", "value": "Your Name your.email@provider.com" }
             ]
         }
     ],
-    "requiresCompatibilities": [
-        "FARGATE"
-    ],
+    "requiresCompatibilities": ["FARGATE"],
     "cpu": "4096",
     "memory": "8192"
 }
@@ -287,51 +277,47 @@ aws ecs create-service \
 
 ## Key Design Decisions
 
-### Why Neo4j for Healthcare Data
-Healthcare information is inherently interconnected. Patients have multiple diagnoses, take various medications, and are treated by different clinicians. Traditional relational databases require complex joins to explore these relationships, while Neo4j makes relationship traversal natural and efficient.
+### Why Neo4j for Financial Data?
+Financial information is inherently interconnected. Companies operate in sectors, have competitors, file reports, and are affected by market events. A graph database makes exploring these complex relationships natural and efficient.
 
-### Dual-Agent Architecture
-The separation between frontend and backend agents creates a clean division of responsibilities. The frontend agent focuses on understanding user intent and orchestrating responses, while the backend agent specializes in data access and tool execution. This makes the system easier to maintain and extend.
+### Root/Sub-Agent Architecture
+Using Google's ADK, the separation between a root agent (orchestrator) and specialist sub-agents creates a clean division of responsibilities, making the system modular and easier to extend with new tools.
 
 ### Hybrid Search Strategy
-Different types of healthcare questions require different approaches. Statistical questions about patient populations are best answered through structured database queries, while questions about symptoms or treatment approaches benefit from semantic search through clinical literature. The system automatically selects the right approach based on the question type.
+Different financial questions require different approaches. The system automatically selects the right tool: structured graph queries for quantitative facts (e.g., revenue) and semantic vector search for qualitative insights (e.g., management sentiment).
 
 ### LLM-Powered Entity Extraction
-Clinical documents come in many formats and styles. Rather than building rigid parsers for each document type, the system uses language models to intelligently extract key information like patient identifiers, symptoms, and treatment plans. This approach is more flexible and can adapt to new document formats.
+SEC filings are dense and unstructured. Using an LLM to intelligently extract key entities like risks, events, and strategies is far more flexible and robust than building rigid parsers.
 
-## Security and Privacy Considerations
+## Limitations and Future Work
 
-This system handles sensitive healthcare data and should be deployed with appropriate security measures:
+The current assistant does not build charts, has no conversational memory, and the predictive model is simplified. Future work could focus on:
 
-- Use authentication and authorization for production deployments
-- Ensure Neo4j database is properly secured with strong passwords and network restrictions
-- For the U.S., consider HIPAA (Health Insurance Portability and Accountability Act) compliance requirements if handling real patient data
-- Implement audit logging for query tracking and compliance
+- **Richer Predictions**: Integrating news sentiment, macroeconomic indicators, and alternative data into the prediction model
+- **Backtesting Engine**: Building a framework to rigorously evaluate the historical performance of prediction models
+- **MLOps Pipeline**: Creating an automated model retraining pipeline to keep the price predictors up-to-date
+- **Advanced Visualizations**: Implementing dynamic chart generation to visually represent financial data and trends
+- **Conversational Memory**: Using a tool like LangChain's ConversationBufferMemory to enable multi-turn, context-aware conversations
 
-## Troubleshooting
+## Screenshots
 
-### Database Connection Issues
-Verify your Neo4j credentials and ensure the database is accessible from your deployment environment. The most common issue is network connectivity between your application and the Neo4j instance.
+![Financial Knowledge Graph in Neo4j](img/neo4j-financial-graph.png)
+*Screenshot of the financial knowledge graph in Neo4j*
 
-### LLM API Errors
-Ensure Vertex AI is enabled in your Google Cloud project and that your service account has the necessary permissions via IAM. Check that your environment variables are properly set. To test locally, run: `gcloud auth login`.
+![Agent Financial Reasoning Process](img/agent-reasoning-financial.png)
+*Screenshot of the agent's financial reasoning process*
 
-### Performance Optimization
-For large datasets, consider processing documents in batches during ingestion. Monitor query performance and add database indexes for frequently accessed properties.
-
-## Limitations and Future Efforts
-
-The current AI Health Assistant does not build charts, has no memory and the deployment has limited autoscaling.
-If I had more time, I would focus on enhancing the assistant's intelligence and operational maturity.
-I would implement a dynamic chart generation to visually represent statistical data and to add conversational memory. To ensure long-term reliability, I would establish a comprehensive system evaluation framework, build an automated model retraining & MLOps pipeline to keep predictions accurate, and integrate a human-in-the-loop feedback mechanism to allow the system to learn directly from clinician input.
-
-## Shared with:
-
-- Daniela Isaza
-- Bojan Ilijoski - @bojanilijoski
-- Diogo Oliveira - @caldasdeoliveira
-- Crhistian Cardona - @crhisto
+![Financial Assistant Chat Interface](img/chat-interface-financial.png)
+*Screenshot of the financial assistant chat interface*
 
 ## Contributing
 
-Contributions are welcome! Please ensure that any changes maintain the system's focus on healthcare data privacy and accuracy. Test thoroughly with representative data before submitting pull requests.
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Disclaimer
+
+This system is for educational and research purposes only. The stock price predictions should not be considered financial advice and are not suitable for actual trading decisions. Always consult with qualified financial professionals before making investment decisions.
