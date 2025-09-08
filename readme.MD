@@ -183,6 +183,13 @@ uvicorn app.main:app --reload --port 8080
 - "Predict the next closing price for AAPL."
 - "What is the stock price prediction for NVDA tomorrow?"
 
+## Screenshots of the Neo4j Graph Database
+
+<img src="img/Screenshot from 2025-09-08 15-04-02.png" alt="A screenshot showing text in Neo4j" width="800">
+
+<img src="img/Screenshot from 2025-09-08 15-04-18.png" alt="A general screenshot of Neo4j" width="800">
+
+
 ## Deployment
 
 ### Google Cloud Run
