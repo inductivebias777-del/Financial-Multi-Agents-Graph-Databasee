@@ -189,7 +189,6 @@ uvicorn app.main:app --reload --port 8080
 
 The system is containerized for easy deployment to Google Cloud Run.
 
-⚠️ **Note**: The instance is configured to scale to zero to save costs. The cold start may take ~15 seconds before the first interaction.
 
 ```bash
 gcloud auth login
@@ -298,17 +297,6 @@ The current assistant does not build charts, has no conversational memory, and t
 - **MLOps Pipeline**: Creating an automated model retraining pipeline to keep the price predictors up-to-date
 - **Advanced Visualizations**: Implementing dynamic chart generation to visually represent financial data and trends
 - **Conversational Memory**: Using a tool like LangChain's ConversationBufferMemory to enable multi-turn, context-aware conversations
-
-## Screenshots
-
-![Financial Knowledge Graph in Neo4j](img/neo4j-financial-graph.png)
-*Screenshot of the financial knowledge graph in Neo4j*
-
-![Agent Financial Reasoning Process](img/agent-reasoning-financial.png)
-*Screenshot of the agent's financial reasoning process*
-
-![Financial Assistant Chat Interface](img/chat-interface-financial.png)
-*Screenshot of the financial assistant chat interface*
 
 ## Contributing
 
