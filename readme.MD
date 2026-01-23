@@ -49,7 +49,7 @@ The system employs a Root/Sub-Agent pattern:
 - **Sub-Agents**: Function as "specialist analysts" with specific tools:
   - **Graph QA Agent**: Generates Cypher queries for statistical questions about company financials
   - **Document RAG Agent**: Performs semantic search through SEC filings
-  - **Stock Predictor Agent**: Runs ML models for next-day price predictions
+  - **Stock Predictor Agent**: Runs Machine Learning models for next-day price predictions
 
 ### Data Flow
 
